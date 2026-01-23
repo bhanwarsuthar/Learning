@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:learning/presentation/auth/registeration/widgets/register_screen.dart';
+import 'package:learning/utils/routes/routes.dart';
+import 'package:learning/utils/routes/routes_name.dart';
+import 'package:learning/view_model/auth_view_model.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -8,13 +11,21 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      debugShowCheckedModeBanner: false,
-      home: RegisterScreen(),
+    return MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ],
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Flutter Demo',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+          ),
+          initialRoute: RoutesName.register,
+          onGenerateRoute: Routes.generateRoute,
+        )
     );
   }
 }

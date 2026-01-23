@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:learning/res/components/custom_button.dart';
+import 'package:learning/utils/utils.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../common/utils/validations/edit_text_validation.dart';
-import '../view_models/register_view_model.dart';
+import '../common/utils/validations/edit_text_validation.dart';
+import '../view_model/auth_view_model.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class RegisterView extends StatefulWidget {
+  const RegisterView({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<RegisterView> createState() => _RegisterViewState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterViewState extends State<RegisterView> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -23,16 +26,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _privacyPolicyAccepted = false;
 
   final EditTextValidation _validation = EditTextValidation();
-  final RegisterViewModel _registerViewModel = RegisterViewModel();
+
+  final FocusNode nameFocusNode = FocusNode();
+  final FocusNode emailFocusNode = FocusNode();
+  final FocusNode addressFocusNode = FocusNode();
+  final FocusNode passwordFocusNode = FocusNode();
+  final FocusNode confirmPasswordFocusNode = FocusNode();
 
   @override
   void dispose() {
+    super.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _addressController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    super.dispose();
+
+    nameFocusNode.dispose();
+    emailFocusNode.dispose();
+    addressFocusNode.dispose();
+    passwordFocusNode.dispose();
+    confirmPasswordFocusNode.dispose();
   }
 
   Future<void> _openPrivacyPolicy() async {
@@ -44,6 +58,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final AuthViewModel authViewModel = Provider.of<AuthViewModel>(context);
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SafeArea(
@@ -73,6 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Name Field
                 TextFormField(
                   controller: _nameController,
+                  focusNode: nameFocusNode,
                   decoration: InputDecoration(
                     labelText: 'Name',
                     hintText: 'Enter your full name',
@@ -85,12 +102,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   keyboardType: TextInputType.name,
                   textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (value) {
+                    Utils.fieldFocusChange(context, nameFocusNode, emailFocusNode);
+                  },
                 ),
                 const SizedBox(height: 20),
 
                 // Email Field
                 TextFormField(
                   controller: _emailController,
+                  focusNode: emailFocusNode,
                   decoration: InputDecoration(
                     labelText: 'Email',
                     hintText: 'Enter your email address',
@@ -103,12 +124,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (value) {
+                    Utils.fieldFocusChange(context, emailFocusNode, addressFocusNode);
+                  },
                 ),
                 const SizedBox(height: 20),
 
                 // Address Field
                 TextFormField(
                   controller: _addressController,
+                  focusNode: addressFocusNode,
                   decoration: InputDecoration(
                     labelText: 'Address',
                     hintText: 'Enter your address',
@@ -122,6 +147,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   keyboardType: TextInputType.streetAddress,
                   textInputAction: TextInputAction.next,
                   maxLines: 2,
+                  onFieldSubmitted: (value) {
+                    Utils.fieldFocusChange(context, addressFocusNode, passwordFocusNode);
+                  },
                 ),
                 const SizedBox(height: 20),
 
@@ -129,6 +157,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  focusNode: passwordFocusNode,
+                  obscuringCharacter: "*",
                   decoration: InputDecoration(
                     labelText: 'Password',
                     hintText: 'Enter your password',
@@ -153,6 +183,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   keyboardType: TextInputType.visiblePassword,
                   textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (value) {
+                    Utils.fieldFocusChange(context, passwordFocusNode, confirmPasswordFocusNode);
+                  },
                 ),
                 const SizedBox(height: 20),
 
@@ -160,6 +193,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
+                  focusNode: confirmPasswordFocusNode,
+                  obscuringCharacter: "*",
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
                     hintText: 'Re-enter your password',
@@ -229,47 +264,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Register Button
-                ElevatedButton(
-                  onPressed: () {
-                    if (_validation.userNameValidation(
-                          _nameController.text,
-                        ) &&
-                        _validation.emailValidation(
-                          _emailController.text,
-                        ) &&
-                        _validation.addressValidation(
-                          _addressController.text,
-                        ) &&
-                        _validation.passwordValidation(
-                          _passwordController.text,
-                        ) &&
-                        _validation.confirmPasswordValidation(
-                          _passwordController.text,
-                          _confirmPasswordController.text,
-                        ) &&
-                        _privacyPolicyAccepted) {
-                      _registerViewModel.registerUser(
-                        name: _nameController.text,
-                        email: _emailController.text,
-                        address: _addressController.text,
-                        password: _passwordController.text,
+                CustomButton(
+                  loading: authViewModel.loading,
+                  onTap: () {
+                    Utils.snackBarMessage(context, "Register button pressed.");
+                    if (authViewModel.validation(
+                      _nameController.text,
+                      _emailController.text,
+                      _addressController.text,
+                      _passwordController.text,
+                      _confirmPasswordController.text,
+                      _privacyPolicyAccepted,
+                    )) {
+                      authViewModel.registerApi(
+                          {
+                            "name": _nameController.text,
+                            "email": _emailController.text,
+                            "address": _addressController.text,
+                            "password": _passwordController.text,
+                          }
                       );
                     }
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                  ),
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
+                  title: "Register",
                 ),
                 const SizedBox(height: 24),
 

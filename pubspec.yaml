@@ -36,7 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   url_launcher: ^6.2.5
   provider: ^6.1.1
-  http: ^1.2.0
+  http: ^1.6.0
+  fluttertoast: ^9.0.0
+  another_flushbar: ^1.12.32
 
 dev_dependencies:
   flutter_test:
