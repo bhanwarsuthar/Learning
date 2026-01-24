@@ -6,11 +6,16 @@ import 'package:learning/data/network/base_api_service.dart';
 import '../app_exceptions.dart';
 
 class NetworkApiService extends BaseApiService{
+
+  final http.Client client;
+
+  NetworkApiService({http.Client? client}) : client = client ?? http.Client();
+
   @override
   Future getGetApiResponse(String url) async {
     dynamic responseJson;
     try{
-      final response =  await http.get(Uri.parse(url)).timeout(Duration(seconds: 10));
+      final response =  await client.get(Uri.parse(url)).timeout(Duration(seconds: 10));
       responseJson = returnResponse(response);
     }on SocketException{
       throw FetchDataException("No Internet Connection");
@@ -22,7 +27,7 @@ class NetworkApiService extends BaseApiService{
   Future getPostApiResponse(String url, dynamic data) async {
     dynamic responseJson;
     try{
-      final response = await http.post(Uri.parse(url),body: data).timeout(Duration(seconds: 10));
+      final response = await client.post(Uri.parse(url),body: data).timeout(Duration(seconds: 10));
       responseJson = returnResponse(response);
     }on SocketException{
       throw FetchDataException("No Internet Connection");
@@ -39,10 +44,11 @@ class NetworkApiService extends BaseApiService{
       case 400:
         throw BadRequestException(response.body.toString());
       case 401:
-      case 403:
         throw UnauthorizedException(response.body.toString());
       case 404:
         throw UnauthorizedException(response.body.toString());
+      case 422:
+        throw InvalidInputException(response.body.toString());
       case 500:
       default:
         throw FetchDataException(

@@ -39,6 +39,7 @@ dependencies:
   http: ^1.6.0
   fluttertoast: ^9.0.0
   another_flushbar: ^1.12.32
+  mocktail: ^1.0.4
 
 dev_dependencies:
   flutter_test:

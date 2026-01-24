@@ -3,11 +3,6 @@ class AppException implements Exception {
   final String? prefix;
 
   AppException([this.message = 'An error occurred', this.prefix]);
-
-  @override
-  String toString() {
-    return prefix != null ? '$prefix: $message' : message;
-  }
 }
 
 class FetchDataException extends AppException {

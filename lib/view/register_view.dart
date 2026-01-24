@@ -90,6 +90,7 @@ class _RegisterViewState extends State<RegisterView> {
                 TextFormField(
                   controller: _nameController,
                   focusNode: nameFocusNode,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: InputDecoration(
                     labelText: 'Name',
                     hintText: 'Enter your full name',
@@ -105,6 +106,13 @@ class _RegisterViewState extends State<RegisterView> {
                   onFieldSubmitted: (value) {
                     Utils.fieldFocusChange(context, nameFocusNode, emailFocusNode);
                   },
+                  onChanged: (value){
+                    authViewModel.setName(value);
+                    _formKey.currentState?.validate();
+                  },
+                  validator: (value){
+                    return EditTextValidation.nameValidator(value);
+                  },
                 ),
                 const SizedBox(height: 20),
 
@@ -112,6 +120,7 @@ class _RegisterViewState extends State<RegisterView> {
                 TextFormField(
                   controller: _emailController,
                   focusNode: emailFocusNode,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: InputDecoration(
                     labelText: 'Email',
                     hintText: 'Enter your email address',
@@ -127,6 +136,13 @@ class _RegisterViewState extends State<RegisterView> {
                   onFieldSubmitted: (value) {
                     Utils.fieldFocusChange(context, emailFocusNode, addressFocusNode);
                   },
+                  onChanged: (value){
+                    authViewModel.setEmail(value);
+                    _formKey.currentState?.validate();
+                  },
+                  validator: (value){
+                    return EditTextValidation.emailValidator(value);
+                  },
                 ),
                 const SizedBox(height: 20),
 
@@ -134,6 +150,7 @@ class _RegisterViewState extends State<RegisterView> {
                 TextFormField(
                   controller: _addressController,
                   focusNode: addressFocusNode,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   decoration: InputDecoration(
                     labelText: 'Address',
                     hintText: 'Enter your address',
@@ -150,6 +167,13 @@ class _RegisterViewState extends State<RegisterView> {
                   onFieldSubmitted: (value) {
                     Utils.fieldFocusChange(context, addressFocusNode, passwordFocusNode);
                   },
+                  onChanged: (value){
+                    authViewModel.setAddress(value);
+                    _formKey.currentState?.validate();
+                  },
+                  validator: (value){
+                    return EditTextValidation.addressValidator(value);
+                  },
                 ),
                 const SizedBox(height: 20),
 
@@ -158,6 +182,7 @@ class _RegisterViewState extends State<RegisterView> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   focusNode: passwordFocusNode,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   obscuringCharacter: "*",
                   decoration: InputDecoration(
                     labelText: 'Password',
@@ -186,6 +211,13 @@ class _RegisterViewState extends State<RegisterView> {
                   onFieldSubmitted: (value) {
                     Utils.fieldFocusChange(context, passwordFocusNode, confirmPasswordFocusNode);
                   },
+                  onChanged: (value){
+                    authViewModel.setPassword(value);
+                    _formKey.currentState?.validate();
+                  },
+                  validator: (value){
+                    return EditTextValidation.passwordValidator(value);
+                  },
                 ),
                 const SizedBox(height: 20),
 
@@ -193,6 +225,7 @@ class _RegisterViewState extends State<RegisterView> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   focusNode: confirmPasswordFocusNode,
                   obscuringCharacter: "*",
                   decoration: InputDecoration(
@@ -219,6 +252,13 @@ class _RegisterViewState extends State<RegisterView> {
                   ),
                   keyboardType: TextInputType.visiblePassword,
                   textInputAction: TextInputAction.done,
+                  onChanged: (value){
+                    authViewModel.setConfirmPassword(value);
+                    _formKey.currentState?.validate();
+                  },
+                  validator: (value){
+                    return EditTextValidation.confirmPasswordValidator(value, _passwordController.text);
+                  },
                 ),
                 const SizedBox(height: 24),
 
@@ -228,6 +268,8 @@ class _RegisterViewState extends State<RegisterView> {
                     Checkbox(
                       value: _privacyPolicyAccepted,
                       onChanged: (value) {
+                        if(value == null) return;
+                        authViewModel.setPrivacyPolicyAccept(value);
                         setState(() {
                           _privacyPolicyAccepted = value ?? false;
                         });
@@ -266,16 +308,10 @@ class _RegisterViewState extends State<RegisterView> {
 
                 CustomButton(
                   loading: authViewModel.loading,
+                  isEnabled: authViewModel.registerButtonEnabled,
                   onTap: () {
                     Utils.snackBarMessage(context, "Register button pressed.");
-                    if (authViewModel.validation(
-                      _nameController.text,
-                      _emailController.text,
-                      _addressController.text,
-                      _passwordController.text,
-                      _confirmPasswordController.text,
-                      _privacyPolicyAccepted,
-                    )) {
+
                       authViewModel.registerApi(
                           {
                             "name": _nameController.text,
@@ -284,7 +320,6 @@ class _RegisterViewState extends State<RegisterView> {
                             "password": _passwordController.text,
                           }
                       );
-                    }
                   },
                   title: "Register",
                 ),

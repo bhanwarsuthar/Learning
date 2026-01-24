@@ -4,16 +4,65 @@ import 'package:learning/repository/auth_repository.dart';
 
 class AuthViewModel with ChangeNotifier {
   final _authRepo = AuthRepository();
-  final _validation = EditTextValidation();
 
   bool _loading = false;
-
   bool get loading => _loading;
-
   setLoading(bool value) {
     _loading = value;
     notifyListeners();
   }
+
+  bool _registerButtonEnabled = false;
+  bool get registerButtonEnabled => _registerButtonEnabled;
+  setRegisterButtonEnabled(bool value) {
+    _registerButtonEnabled = value;
+    notifyListeners();
+  }
+
+  String _name = '';
+  String get name => _name;
+  setName(String value) {
+    _name = value;
+    hasAllValidInputs();
+  }
+
+  String _email = '';
+  String get email => _email;
+  setEmail(String value) {
+    _email = value;
+    hasAllValidInputs();
+  }
+
+  String _address = '';
+  String get address => _address;
+  setAddress(String value) {
+    _address = value;
+    hasAllValidInputs();
+  }
+
+  String _password = '';
+  String get password => _password;
+  setPassword(String value) {
+    _password = value;
+    hasAllValidInputs();
+  }
+
+  String _confirmPassword = '';
+  String get confirmPassword => _confirmPassword;
+  setConfirmPassword(String value) {
+    _confirmPassword = value;
+    hasAllValidInputs();
+  }
+
+  bool _privacyPolicyAccept = false;
+  bool get privacyPolicyAccept => _privacyPolicyAccept;
+  setPrivacyPolicyAccept(bool value) {
+    _privacyPolicyAccept = value;
+    hasAllValidInputs();
+  }
+
+
+
 
   Future<void> registerApi(dynamic data) async {
     try {
@@ -37,6 +86,17 @@ class AuthViewModel with ChangeNotifier {
     }
   }
 
+  void hasAllValidInputs() {
+    setRegisterButtonEnabled(validation(
+      _name,
+      _email,
+      _address,
+      _password,
+      _confirmPassword,
+      _privacyPolicyAccept,
+    ));
+  }
+
   bool validation(
     String name,
     String email,
@@ -45,11 +105,11 @@ class AuthViewModel with ChangeNotifier {
     String confirmPassword,
     bool privacyPolicyAccepted,
   ) {
-    return (_validation.userNameValidation(name) &&
-        _validation.emailValidation(email) &&
-        _validation.addressValidation(address) &&
-        _validation.passwordValidation(password) &&
-        _validation.confirmPasswordValidation(password, confirmPassword) &&
+    return (EditTextValidation.userNameValidation(name) &&
+        EditTextValidation.emailValidation(email) &&
+        EditTextValidation.addressValidation(address) &&
+        EditTextValidation.passwordValidation(password) &&
+        EditTextValidation.confirmPasswordValidation(password, confirmPassword) &&
         privacyPolicyAccepted);
   }
 }
