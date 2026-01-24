@@ -181,11 +181,42 @@ Backend API
 
 ## 📊 Code Coverage
 
+### 🚀 Quick Start - View Coverage Report
+
+**👉 [View Live Coverage Report](coverage_viewer.html)** - Interactive HTML viewer (opens in browser)
+
+Or use the automated script:
+```bash
+./view_coverage.sh
+```
+
+This script will:
+1. ✅ Run all tests with coverage
+2. 🧹 Clean coverage data
+3. 📊 Generate HTML report
+4. 🌐 Automatically open in your browser
+
 ### Generating Coverage Reports
 
-The project includes scripts to generate code coverage reports in HTML format.
+The project includes multiple ways to generate code coverage reports:
 
-#### Method 1: Using the coverage helper script
+#### Method 1: Quick View Script (Recommended) ⭐
+
+```bash
+# Make executable (first time only)
+chmod +x view_coverage.sh
+
+# Generate and view report
+./view_coverage.sh
+```
+
+This script automatically:
+- Runs Flutter tests with coverage
+- Cleans coverage data
+- Generates HTML report
+- Opens in your default browser
+
+#### Method 2: Using the coverage helper script
 
 ```bash
 # Make the script executable (first time only)
@@ -200,13 +231,13 @@ This script:
 2. Cleans the coverage data by removing generated files
 3. Generates HTML report: `genhtml coverage/lcov_cleaned.info -o coverage/html`
 
-#### Method 2: Using npm script
+#### Method 3: Using npm script
 
 ```bash
 npm run test:cov
 ```
 
-#### Method 3: Manual commands
+#### Method 4: Manual commands
 
 ```bash
 # Run tests with coverage
@@ -227,7 +258,26 @@ genhtml coverage/lcov_cleaned.info -o coverage/html
 
 ### Viewing Coverage Report
 
-After generating the coverage report, open the HTML file in your browser:
+#### Option 1: Interactive Viewer (Recommended) 🌐
+
+Open `coverage_viewer.html` in your browser - it will automatically load the latest coverage report:
+
+```bash
+# On macOS
+open coverage_viewer.html
+
+# On Linux
+xdg-open coverage_viewer.html
+
+# On Windows
+start coverage_viewer.html
+```
+
+Or simply double-click `coverage_viewer.html` in your file explorer.
+
+#### Option 2: Direct HTML File
+
+After generating the coverage report, open the HTML file directly:
 
 ```bash
 # On macOS
@@ -241,6 +291,17 @@ start coverage/html/index.html
 ```
 
 Or manually navigate to: `coverage/html/index.html`
+
+### 📈 Current Coverage Status
+
+**Last Generated:** Check `coverage/html/index.html` or use the [Interactive Viewer](coverage_viewer.html)
+
+**Typical Coverage:**
+- Overall: ~90%+ line coverage
+- `common/utils/validations/`: 100% ✅
+- `data/`: 100% ✅
+- `data/network/`: 100% ✅
+- `utils/`: ~60% ⚠️ (needs improvement)
 
 ### Coverage Report Structure
 
@@ -257,6 +318,15 @@ The HTML coverage report includes:
   - Partially covered lines (highlighted in yellow)
   
 - **Source Code View**: Line-by-line coverage visualization
+
+### 📱 Interactive Coverage Viewer
+
+The project includes an interactive HTML viewer (`coverage_viewer.html`) that:
+- ✅ Automatically loads the latest coverage report
+- ✅ Provides refresh and generation buttons
+- ✅ Shows real-time status updates
+- ✅ Works offline once the report is generated
+- ✅ Responsive design for all devices
 
 ### Coverage Files
 
@@ -352,7 +422,7 @@ This project is for learning purposes.
 
 ## 👥 Contributors
 
-- MarwadTech
+- Bhanwar Suthar
 
 ---
 

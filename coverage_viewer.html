@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Coverage Report - Learning Flutter App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .status {
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .status.loading {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .iframe-container {
+            width: 100%;
+            height: 80vh;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+        
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .info-box code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Code Coverage Report</h1>
+            <p>Learning Flutter App - MVVM Architecture</p>
+        </div>
+        
+        <div class="content">
+            <div id="status" class="status loading">
+                <p>🔄 Loading coverage report...</p>
+            </div>
+            
+            <div class="actions">
+                <button class="btn btn-primary" onclick="loadReport()">🔄 Refresh Report</button>
+                <button class="btn btn-success" onclick="generateReport()">⚙️ Generate New Report</button>
+                <a href="coverage/html/index.html" target="_blank" class="btn btn-secondary">🔗 Open Directly</a>
+            </div>
+            
+            <div class="info-box">
+                <h3>ℹ️ How to Use</h3>
+                <p><strong>Option 1:</strong> Click "Generate New Report" to run tests and create a fresh coverage report.</p>
+                <p><strong>Option 2:</strong> If the report already exists, it will load automatically below.</p>
+                <p><strong>Option 3:</strong> Click "Open Directly" to open the report in a new tab.</p>
+                <p><strong>Command Line:</strong> Run <code>./view_coverage.sh</code> to generate and view the report.</p>
+            </div>
+            
+            <div class="iframe-container" id="iframeContainer">
+                <div style="text-align: center; padding: 50px;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 20px; color: #6c757d;">Loading coverage report...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Generated by LCOV | Last updated: <span id="lastUpdate">-</span></p>
+        </div>
+    </div>
+    
+    <script>
+        const reportPath = 'coverage/html/index.html';
+        const statusDiv = document.getElementById('status');
+        const iframeContainer = document.getElementById('iframeContainer');
+        const lastUpdateSpan = document.getElementById('lastUpdate');
+        
+        function updateStatus(type, message) {
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = `<p>${message}</p>`;
+        }
+        
+        function loadReport() {
+            updateStatus('loading', '🔄 Loading coverage report...');
+            iframeContainer.innerHTML = '<div style="text-align: center; padding: 50px;"><div class="spinner"></div><p style="margin-top: 20px; color: #6c757d;">Loading coverage report...</p></div>';
+            
+            // Try to load the report
+            fetch(reportPath, { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        // Report exists, load it in iframe
+                        iframeContainer.innerHTML = `<iframe src="${reportPath}" title="Coverage Report"></iframe>`;
+                        updateStatus('success', '✅ Coverage report loaded successfully!');
+                        
+                        // Try to get last modified date
+                        fetch(reportPath, { method: 'HEAD' })
+                            .then(res => {
+                                const lastModified = res.headers.get('last-modified');
+                                if (lastModified) {
+                                    lastUpdateSpan.textContent = new Date(lastModified).toLocaleString();
+                                }
+                            })
+                            .catch(() => {
+                                lastUpdateSpan.textContent = new Date().toLocaleString();
+                            });
+                    } else {
+                        throw new Error('Report not found');
+                    }
+                })
+                .catch(error => {
+                    updateStatus('error', '❌ Coverage report not found. Please generate it first using the button above or run: <code>./view_coverage.sh</code>');
+                    iframeContainer.innerHTML = `
+                        <div style="text-align: center; padding: 50px; color: #dc3545;">
+                            <h2>📄 Report Not Found</h2>
+                            <p style="margin: 20px 0;">The coverage report has not been generated yet.</p>
+                            <p>Click "Generate New Report" above or run:</p>
+                            <code style="display: block; margin: 20px auto; padding: 10px; background: #f8f9fa; border-radius: 4px; max-width: 400px;">./view_coverage.sh</code>
+                        </div>
+                    `;
+                });
+        }
+        
+        function generateReport() {
+            updateStatus('loading', '⚙️ Generating coverage report... This may take a moment.');
+            iframeContainer.innerHTML = '<div style="text-align: center; padding: 50px;"><div class="spinner"></div><p style="margin-top: 20px; color: #6c757d;">Generating report...</p></div>';
+            
+            // Note: This would require a backend service to actually run the command
+            // For now, we'll just show instructions
+            setTimeout(() => {
+                updateStatus('error', '⚠️ Report generation requires running commands. Please use: <code>./view_coverage.sh</code> or <code>flutter test --coverage</code>');
+                iframeContainer.innerHTML = `
+                    <div style="text-align: center; padding: 50px;">
+                        <h2>📝 Generate Report Manually</h2>
+                        <p style="margin: 20px 0;">To generate the coverage report, run one of these commands:</p>
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px auto; max-width: 600px;">
+                            <code style="display: block; margin: 10px 0; padding: 10px; background: white; border-radius: 4px;">./view_coverage.sh</code>
+                            <p style="margin: 10px 0; color: #6c757d;">OR</p>
+                            <code style="display: block; margin: 10px 0; padding: 10px; background: white; border-radius: 4px;">flutter test --coverage && genhtml coverage/lcov.info -o coverage/html</code>
+                        </div>
+                        <p style="margin-top: 20px; color: #6c757d;">After generation, click "Refresh Report" above.</p>
+                    </div>
+                `;
+            }, 1000);
+        }
+        
+        // Auto-load on page load
+        window.addEventListener('load', () => {
+            loadReport();
+        });
+        
+        // Check if report exists periodically (every 5 seconds)
+        setInterval(() => {
+            if (statusDiv.classList.contains('error')) {
+                fetch(reportPath, { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            loadReport();
+                        }
+                    })
+                    .catch(() => {});
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
