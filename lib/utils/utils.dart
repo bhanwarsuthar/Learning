@@ -1,31 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:another_flushbar/flushbar.dart';
+import 'package:learning/utils/filed_focus_change_service.dart';
+import 'package:learning/utils/snack_bar_message_service.dart';
+import 'package:learning/utils/toast_service.dart';
+
+import 'flush_bar_message_service.dart';
+
+
 
 class Utils {
+  static ToastService toastService = FlutterToastService();
+  static FlushBarMessageService flushBarMessageService = FlutterFlushBarMessageService();
+  static SnackBarMessageService snackBarMessageService = FlutterSnackBarMessageService();
+  static FieldFocusChangeService fieldFocusChangeService = FlutterFieldFocusChangeService();
+
   static void showToast(String message) {
-    Fluttertoast.showToast(msg: message);
+    toastService.showToast(message);
   }
 
 
   static void flushBarMessage(BuildContext context, String title, String message) {
-    // Implementation for showing flush bar error message
-    Flushbar(
-      title: title,
-      message: message,
-      flushbarPosition: FlushbarPosition.TOP,
-      backgroundColor: Color(0xFF000000),
-      duration: Duration(seconds: 3),
-    ).show(context);
+    flushBarMessageService.showFlushBarMessage(context, title, message);
   }
+
 
   static void snackBarMessage(BuildContext context, String message) {
-    final snackBar = SnackBar(content: Text(message));
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    snackBarMessageService.showSnackBarMessage(context, message);
   }
 
+
   static void fieldFocusChange(BuildContext context, FocusNode currentFocus, FocusNode nextFocus) {
-    currentFocus.unfocus();
-    FocusScope.of(context).requestFocus(nextFocus);
+    fieldFocusChangeService.fieldFocusChange(context: context, currentFocus: currentFocus, nextFocus: nextFocus);
   }
 }
