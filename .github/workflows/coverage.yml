@@ -1,0 +1,60 @@
+name: Generate Coverage Report
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.9.2'
+        channel: 'stable'
+    
+    - name: Install dependencies
+      run: flutter pub get
+    
+    - name: Install lcov
+      run: sudo apt-get update && sudo apt-get install -y lcov
+    
+    - name: Run tests with coverage
+      run: flutter test --coverage
+    
+    - name: Clean coverage data
+      run: |
+        lcov --remove coverage/lcov.info \
+          '**/*.g.dart' \
+          '**/*.freezed.dart' \
+          '**/generated/**' \
+          '**/l10n/**' \
+          '**/firebase_options.dart' \
+          -o coverage/lcov_cleaned.info || cp coverage/lcov.info coverage/lcov_cleaned.info
+    
+    - name: Generate HTML coverage report
+      run: genhtml coverage/lcov_cleaned.info -o coverage/html
+    
+    - name: Create docs directory for GitHub Pages
+      run: |
+        mkdir -p docs/coverage
+        cp -r coverage/html/* docs/coverage/
+        # Copy coverage viewer to docs root
+        cp coverage_viewer.html docs/coverage_viewer.html || true
+        # Create index redirect
+        echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=coverage_viewer.html"></head><body>Redirecting to <a href="coverage_viewer.html">coverage report</a>...</body></html>' > docs/index.html
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs
+        keep_files: false

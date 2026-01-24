@@ -219,7 +219,23 @@
     </div>
     
     <script>
-        const reportPath = 'coverage/html/index.html';
+        // Detect if we're on GitHub Pages
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        const repoName = isGitHubPages ? window.location.pathname.split('/')[1] : '';
+        
+        // Try multiple paths for coverage report
+        const possiblePaths = isGitHubPages ? [
+            `/${repoName}/coverage/html/index.html`,
+            `./coverage/html/index.html`,
+            `../coverage/html/index.html`,
+            `coverage/html/index.html`,
+            `./coverage/index.html`
+        ] : [
+            'coverage/html/index.html',
+            './coverage/html/index.html',
+            '../coverage/html/index.html'
+        ];
+        
         const statusDiv = document.getElementById('status');
         const iframeContainer = document.getElementById('iframeContainer');
         const lastUpdateSpan = document.getElementById('lastUpdate');
@@ -229,44 +245,92 @@
             statusDiv.innerHTML = `<p>${message}</p>`;
         }
         
+        function tryLoadPath(paths, index = 0) {
+            if (index >= paths.length) {
+                // All paths failed
+                updateStatus('error', '❌ Coverage report not found. ' + 
+                    (isGitHubPages 
+                        ? 'The coverage report needs to be generated and committed to the repository. See GitHub Actions workflow for automatic generation.'
+                        : 'Please generate it first using: <code>./view_coverage.sh</code>'));
+                iframeContainer.innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: #dc3545;">
+                        <h2>📄 Report Not Found</h2>
+                        <p style="margin: 20px 0;">The coverage report has not been generated yet.</p>
+                        ${isGitHubPages ? `
+                            <p><strong>For GitHub Pages:</strong></p>
+                            <ol style="text-align: left; max-width: 600px; margin: 20px auto;">
+                                <li>Enable GitHub Actions in your repository settings</li>
+                                <li>The coverage workflow will auto-generate on each push</li>
+                                <li>Or manually run: <code>./generate_coverage_standalone.sh</code> and commit the files</li>
+                            </ol>
+                        ` : `
+                            <p>Click "Generate New Report" above or run:</p>
+                            <code style="display: block; margin: 20px auto; padding: 10px; background: #f8f9fa; border-radius: 4px; max-width: 400px;">./view_coverage.sh</code>
+                        `}
+                    </div>
+                `;
+                return;
+            }
+            
+            const path = paths[index];
+            updateStatus('loading', `🔄 Trying to load coverage report... (${index + 1}/${paths.length})`);
+            
+            // Try to load the report
+            const testImg = new Image();
+            testImg.onload = function() {
+                // Path exists, load it in iframe
+                iframeContainer.innerHTML = `<iframe src="${path}" title="Coverage Report" style="width: 100%; height: 100%; border: none;"></iframe>`;
+                updateStatus('success', '✅ Coverage report loaded successfully!');
+                lastUpdateSpan.textContent = new Date().toLocaleString();
+            };
+            
+            testImg.onerror = function() {
+                // Try next path
+                setTimeout(() => tryLoadPath(paths, index + 1), 100);
+            };
+            
+            // Use fetch to check if file exists
+            fetch(path, { method: 'HEAD', mode: 'no-cors' })
+                .then(() => {
+                    // File might exist, try loading in iframe
+                    const iframe = document.createElement('iframe');
+                    iframe.src = path;
+                    iframe.title = 'Coverage Report';
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    iframe.style.border = 'none';
+                    
+                    iframe.onload = function() {
+                        iframeContainer.innerHTML = '';
+                        iframeContainer.appendChild(iframe);
+                        updateStatus('success', '✅ Coverage report loaded successfully!');
+                        lastUpdateSpan.textContent = new Date().toLocaleString();
+                    };
+                    
+                    iframe.onerror = function() {
+                        tryLoadPath(paths, index + 1);
+                    };
+                    
+                    // Timeout after 3 seconds
+                    setTimeout(() => {
+                        if (iframeContainer.querySelector('iframe') === null) {
+                            tryLoadPath(paths, index + 1);
+                        }
+                    }, 3000);
+                    
+                    iframeContainer.innerHTML = '';
+                    iframeContainer.appendChild(iframe);
+                })
+                .catch(() => {
+                    // Try next path
+                    tryLoadPath(paths, index + 1);
+                });
+        }
+        
         function loadReport() {
             updateStatus('loading', '🔄 Loading coverage report...');
             iframeContainer.innerHTML = '<div style="text-align: center; padding: 50px;"><div class="spinner"></div><p style="margin-top: 20px; color: #6c757d;">Loading coverage report...</p></div>';
-            
-            // Try to load the report
-            fetch(reportPath, { method: 'HEAD' })
-                .then(response => {
-                    if (response.ok) {
-                        // Report exists, load it in iframe
-                        iframeContainer.innerHTML = `<iframe src="${reportPath}" title="Coverage Report"></iframe>`;
-                        updateStatus('success', '✅ Coverage report loaded successfully!');
-                        
-                        // Try to get last modified date
-                        fetch(reportPath, { method: 'HEAD' })
-                            .then(res => {
-                                const lastModified = res.headers.get('last-modified');
-                                if (lastModified) {
-                                    lastUpdateSpan.textContent = new Date(lastModified).toLocaleString();
-                                }
-                            })
-                            .catch(() => {
-                                lastUpdateSpan.textContent = new Date().toLocaleString();
-                            });
-                    } else {
-                        throw new Error('Report not found');
-                    }
-                })
-                .catch(error => {
-                    updateStatus('error', '❌ Coverage report not found. Please generate it first using the button above or run: <code>./view_coverage.sh</code>');
-                    iframeContainer.innerHTML = `
-                        <div style="text-align: center; padding: 50px; color: #dc3545;">
-                            <h2>📄 Report Not Found</h2>
-                            <p style="margin: 20px 0;">The coverage report has not been generated yet.</p>
-                            <p>Click "Generate New Report" above or run:</p>
-                            <code style="display: block; margin: 20px auto; padding: 10px; background: #f8f9fa; border-radius: 4px; max-width: 400px;">./view_coverage.sh</code>
-                        </div>
-                    `;
-                });
+            tryLoadPath(possiblePaths);
         }
         
         function generateReport() {
@@ -297,18 +361,12 @@
             loadReport();
         });
         
-        // Check if report exists periodically (every 5 seconds)
+        // Check if report exists periodically (every 10 seconds) only if error
         setInterval(() => {
             if (statusDiv.classList.contains('error')) {
-                fetch(reportPath, { method: 'HEAD' })
-                    .then(response => {
-                        if (response.ok) {
-                            loadReport();
-                        }
-                    })
-                    .catch(() => {});
+                tryLoadPath(possiblePaths);
             }
-        }, 5000);
+        }, 10000);
     </script>
 </body>
 </html>

@@ -183,7 +183,9 @@ Backend API
 
 ### 🚀 Quick Start - View Coverage Report
 
-**👉 [View Live Coverage Report](coverage_viewer.html)** - Interactive HTML viewer (opens in browser)
+**👉 [View Live Coverage Report on GitHub Pages](https://bhanwarsuthar.github.io/Learning/coverage_viewer.html)** - Interactive HTML viewer
+
+**Local Development:** [Open coverage_viewer.html](coverage_viewer.html) in your browser
 
 Or use the automated script:
 ```bash

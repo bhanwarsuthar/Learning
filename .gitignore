@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+# But allow coverage in docs for GitHub Pages
+!/docs/coverage/
 
 # Symbolication related
 app.*.symbols
