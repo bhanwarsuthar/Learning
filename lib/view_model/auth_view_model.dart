@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:learning/common/utils/validations/edit_text_validation.dart';
-import 'package:learning/repository/auth_repository.dart';
+import 'package:learning/repositories/auth_repository.dart';
 
 class AuthViewModel with ChangeNotifier {
   final _authRepo = AuthRepository();
