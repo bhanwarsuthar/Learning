@@ -9,6 +9,10 @@ jobs:
   update-readme:
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: write
+      pull-requests: write
+    
     steps:
     - uses: actions/checkout@v3
       with:
@@ -28,6 +32,9 @@ jobs:
     
     - name: Run tests with coverage
       run: flutter test --coverage
+
+    - name: Generate HTML coverage report
+      run: genhtml coverage/lcov.info -o coverage/html
     
     - name: Get commit count
       id: commit_count
@@ -150,7 +157,7 @@ jobs:
         git add README.md
         if ! git diff --staged --quiet; then
           git commit -m "📊 Auto-update: Commit count (${{ steps.commit_count.outputs.count }}) and coverage (${{ steps.coverage.outputs.percentage }}%) [skip ci]"
-          git push
+          git push origin HEAD:${{ github.ref }}
         else
           echo "No changes to commit"
         fi
