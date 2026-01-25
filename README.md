@@ -16,15 +16,14 @@ A Flutter project implementing MVVM (Model-View-ViewModel) architecture using Pr
 
 | Metric | Value | Status |
 |--------|-------|--------|
-| **Total Commits** | Loading... | ✅ Active |
-| **Code Coverage** | Loading... | 🔄 Auto-updated |
-| **Last Updated** | Loading... | 🔄 Auto-updated |
-| **Latest Commit** | `Loading...` | 📝 |
+| **Total Commits** | 16 | ✅ Active |
+| **Code Coverage** | 93.7% | ✅ Excellent |
+| **Last Updated** | 2026-01-25 15:36:54 UTC | 🔄 Auto-updated |
+| **Latest Commit** | `247c916` | 📝 |
 
 > **Note:** These statistics are automatically updated on every commit via GitHub Actions. View live dashboard at: [GitHub Pages](https://bhanwarsuthar.github.io/Learning/)
 
 ---
-
 ## 🚀 Getting Started
 
 ### Prerequisites
