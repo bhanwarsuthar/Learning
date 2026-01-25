@@ -18,27 +18,16 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.9.2'
         channel: 'stable'
     
     - name: Install dependencies
       run: flutter pub get
     
     - name: Install lcov and bc
-      run: sudo apt-get update && sudo apt-get install -y lcov bc
+      run: sudo apt-get update && sudo apt-get install -y lcov
     
     - name: Run tests with coverage
       run: flutter test --coverage
-    
-    - name: Clean coverage data
-      run: |
-        lcov --remove coverage/lcov.info \
-          '**/*.g.dart' \
-          '**/*.freezed.dart' \
-          '**/generated/**' \
-          '**/l10n/**' \
-          '**/firebase_options.dart' \
-          -o coverage/lcov_cleaned.info || cp coverage/lcov.info coverage/lcov_cleaned.info
     
     - name: Get commit count
       id: commit_count
