@@ -3,7 +3,9 @@ import 'package:learning/common/utils/validations/edit_text_validation.dart';
 import 'package:learning/repositories/auth_repository.dart';
 
 class AuthViewModel with ChangeNotifier {
-  final _authRepo = AuthRepository();
+  final AuthRepository authRepo;
+
+  AuthViewModel({required this.authRepo});
 
   bool _loading = false;
   bool get loading => _loading;
@@ -65,9 +67,9 @@ class AuthViewModel with ChangeNotifier {
 
 
   Future<void> registerApi(dynamic data) async {
-    try {
+
       setLoading(true);
-      await _authRepo
+      await authRepo
           .registerApi(data)
           .then((value) {
             setLoading(false);
@@ -81,35 +83,15 @@ class AuthViewModel with ChangeNotifier {
               print('Register Error: $error');
             }
           });
-    } catch (e) {
-      rethrow;
-    }
   }
 
   void hasAllValidInputs() {
-    setRegisterButtonEnabled(validation(
-      _name,
-      _email,
-      _address,
-      _password,
-      _confirmPassword,
-      _privacyPolicyAccept,
-    ));
-  }
-
-  bool validation(
-    String name,
-    String email,
-    String address,
-    String password,
-    String confirmPassword,
-    bool privacyPolicyAccepted,
-  ) {
-    return (EditTextValidation.userNameValidation(name) &&
-        EditTextValidation.emailValidation(email) &&
-        EditTextValidation.addressValidation(address) &&
-        EditTextValidation.passwordValidation(password) &&
-        EditTextValidation.confirmPasswordValidation(password, confirmPassword) &&
-        privacyPolicyAccepted);
+    setRegisterButtonEnabled(EditTextValidation.userNameValidation(_name) &&
+        EditTextValidation.emailValidation(_email) &&
+        EditTextValidation.addressValidation(_address) &&
+        EditTextValidation.passwordValidation(_password) &&
+        EditTextValidation.confirmPasswordValidation(
+            _password, _confirmPassword) &&
+        _privacyPolicyAccept);
   }
 }
