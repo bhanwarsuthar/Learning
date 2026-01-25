@@ -81,9 +81,10 @@ jobs:
         else
             COVERAGE_STATUS="❌ Needs Improvement"
         fi
+        export COVERAGE_STATUS
         
         # Create Python script to update README
-        cat > update_readme.py << 'PYEOF'
+        python3 << 'PYEOF'
         import re
         import os
         
@@ -98,21 +99,23 @@ jobs:
         with open('README.md', 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Create stats section
-        stats_section = f"""## 📊 Project Statistics
-
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Total Commits** | {commit_count} | ✅ Active |
-| **Code Coverage** | {coverage_percent}% | {coverage_status} |
-| **Last Updated** | {commit_date} | 🔄 Auto-updated |
-| **Latest Commit** | `{commit_sha}` | 📝 |
-
-> **Note:** These statistics are automatically updated on every commit via GitHub Actions. View live dashboard at: [GitHub Pages](https://bhanwarsuthar.github.io/Learning/)
-
----
-
-"""
+        # Create stats section - using list join to avoid YAML issues with pipes
+        stats_lines = [
+            "## 📊 Project Statistics",
+            "",
+            "| Metric | Value | Status |",
+            "|--------|-------|--------|",
+            f"| **Total Commits** | {commit_count} | ✅ Active |",
+            f"| **Code Coverage** | {coverage_percent}% | {coverage_status} |",
+            f"| **Last Updated** | {commit_date} | 🔄 Auto-updated |",
+            f"| **Latest Commit** | `{commit_sha}` | 📝 |",
+            "",
+            "> **Note:** These statistics are automatically updated on every commit via GitHub Actions. View live dashboard at: [GitHub Pages](https://bhanwarsuthar.github.io/Learning/)",
+            "",
+            "---",
+            ""
+        ]
+        stats_section = "\n".join(stats_lines)
         
         # Check if stats section exists
         if re.search(r'## 📊 Project Statistics', content):
@@ -150,12 +153,6 @@ jobs:
         print(f"Commit count: {commit_count}")
         print(f"Coverage: {coverage_percent}%")
         PYEOF
-        
-        # Export coverage status for Python script
-        export COVERAGE_STATUS
-        
-        # Run Python script
-        python3 update_readme.py
     
     - name: Commit changes
       run: |
