@@ -15,7 +15,6 @@ jobs:
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.9.2'
         channel: 'stable'
     
     - name: Install dependencies
@@ -27,15 +26,5 @@ jobs:
     - name: Run tests with coverage
       run: flutter test --coverage
     
-    - name: Clean coverage data
-      run: |
-        lcov --remove coverage/lcov.info \
-          '**/*.g.dart' \
-          '**/*.freezed.dart' \
-          '**/generated/**' \
-          '**/l10n/**' \
-          '**/firebase_options.dart' \
-          -o coverage/lcov_cleaned.info || cp coverage/lcov.info coverage/lcov_cleaned.info
-    
     - name: Generate HTML coverage report
-      run: genhtml coverage/lcov_cleaned.info -o coverage/html
+      run: genhtml coverage/lcov.info -o coverage/html
