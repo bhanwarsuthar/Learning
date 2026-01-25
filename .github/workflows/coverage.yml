@@ -1,11 +1,9 @@
-name: Generate Coverage Report
+# This workflow is replaced by coverage_and_stats.yml
+# Kept for backward compatibility - will be removed in future
+name: Generate Coverage Report (Legacy)
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
+  workflow_dispatch:  # Only manual trigger
 
 jobs:
   coverage:
@@ -41,20 +39,3 @@ jobs:
     
     - name: Generate HTML coverage report
       run: genhtml coverage/lcov_cleaned.info -o coverage/html
-    
-    - name: Create docs directory for GitHub Pages
-      run: |
-        mkdir -p docs/coverage
-        cp -r coverage/html/* docs/coverage/
-        # Copy coverage viewer to docs root
-        cp coverage_viewer.html docs/coverage_viewer.html || true
-        # Create index redirect
-        echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=coverage_viewer.html"></head><body>Redirecting to <a href="coverage_viewer.html">coverage report</a>...</body></html>' > docs/index.html
-    
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs
-        keep_files: false
