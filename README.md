@@ -5,13 +5,14 @@ A Flutter project implementing MVVM (Model-View-ViewModel) architecture using Pr
 ## 📄 Resume Showcase
 
 - Resume source (editable): `resume/resume.md`
-- Generated web version: `resume/index.html`
+- Live web resume: [https://bhanwarsuthar.github.io/Learning/](https://bhanwarsuthar.github.io/Learning/)
+- Generated web version (tracked): `docs/index.html` and `resume/index.html`
 - Generated PDF version: `resume/Bhanwar_Suthar_Resume.pdf`
-- GitHub Actions workflow: `.github/workflows/resume_cicd.yml`
+- GitHub Actions workflow: `.github/workflows/update_readme.yml`
 
 The resume files are automatically built in CI:
-- On every PR to `main`/`master`: builds and uploads preview artifacts.
-- On every push/merge to `main`/`master`: rebuilds and auto-commits updated `HTML` and `PDF` resume files.
+- On every PR to `main`/`master`: builds/tests and validates generated resume output.
+- On every push/merge to `main`/`master`: rebuilds and auto-commits updated `README`, `HTML`, and `PDF` resume files.
 
 ## 📊 Project Statistics
 

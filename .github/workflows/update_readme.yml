@@ -3,6 +3,8 @@ name: Update README with Stats
 on:
   push:
     branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -29,12 +31,36 @@ jobs:
     
     - name: Install lcov and bc
       run: sudo apt-get update && sudo apt-get install -y lcov
+
+    - name: Install pandoc and wkhtmltopdf
+      run: sudo apt-get install -y pandoc wkhtmltopdf
     
     - name: Run tests with coverage
       run: flutter test --coverage
 
     - name: Generate HTML coverage report
       run: genhtml coverage/lcov.info -o coverage/html
+
+    - name: Build resume (HTML + PDF)
+      run: |
+        mkdir -p docs
+        cp resume/resume.css docs/resume.css
+
+        pandoc resume/resume.md \
+          --standalone \
+          --css resume.css \
+          -o docs/index.html
+
+        pandoc resume/resume.md \
+          --standalone \
+          --css resume.css \
+          -o resume/index.html
+
+        pandoc resume/resume.md \
+          --standalone \
+          --css resume.css \
+          --pdf-engine=wkhtmltopdf \
+          -o resume/Bhanwar_Suthar_Resume.pdf
     
     - name: Get commit count
       id: commit_count
@@ -151,12 +177,13 @@ jobs:
         PYEOF
     
     - name: Commit changes
+      if: github.event_name == 'push'
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add README.md
+        git add README.md docs/index.html docs/resume.css resume/index.html resume/Bhanwar_Suthar_Resume.pdf
         if ! git diff --staged --quiet; then
-          git commit -m "📊 Auto-update: Commit count (${{ steps.commit_count.outputs.count }}) and coverage (${{ steps.coverage.outputs.percentage }}%) [skip ci]"
+          git commit -m "📊 Auto-update: stats, coverage, and resume [skip ci]"
           git push origin HEAD:${{ github.ref }}
         else
           echo "No changes to commit"

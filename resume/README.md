@@ -11,10 +11,11 @@ This folder contains your resume source and generated artifacts.
 
 ## Workflow
 
-Workflow file: `.github/workflows/resume_cicd.yml`
+Workflow file: `.github/workflows/update_readme.yml`
 
-- PR to `main`/`master`: build resume + upload artifact preview.
-- Push to `main`/`master`: build resume + commit generated files back to branch.
+- PR to `main`/`master`: build/test + generate resume outputs for validation.
+- Push to `main`/`master`: build/test + auto-commit generated resume and README updates.
+- GitHub Pages root (`/Learning/`) is generated as `docs/index.html` to show your full resume directly.
 
 ## How to update resume
 
