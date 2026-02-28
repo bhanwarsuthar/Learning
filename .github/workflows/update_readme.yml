@@ -22,7 +22,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
 
       - name: Install dependencies
         run: flutter pub get
@@ -39,8 +39,7 @@ jobs:
       - name: Get commit count
         id: commit_count
         run: |
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-          echo "count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+          echo "count=$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
 
       - name: Get coverage percentage
         id: coverage
@@ -55,10 +54,8 @@ jobs:
       - name: Get latest commit info
         id: commit_info
         run: |
-          COMMIT_SHA=$(git rev-parse --short HEAD)
-          COMMIT_DATE=$(git log -1 --pretty=%cd --date=format:'%Y-%m-%d %H:%M:%S UTC')
-          echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
-          echo "date=$COMMIT_DATE" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "date=$(git log -1 --pretty=%cd --date=format:'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
 
       - name: Update README.md
         env:
@@ -67,7 +64,6 @@ jobs:
           COMMIT_SHA: ${{ steps.commit_info.outputs.sha }}
           COMMIT_DATE: ${{ steps.commit_info.outputs.date }}
         run: |
-          # Determine coverage status
           if (( $(echo "$COVERAGE_PERCENT >= 80" | bc -l) )); then
               COVERAGE_STATUS="✅ Excellent"
           elif (( $(echo "$COVERAGE_PERCENT >= 60" | bc -l) )); then
@@ -81,67 +77,101 @@ jobs:
           import re
           import os
 
-          commit_count = os.environ.get('COMMIT_COUNT', '0')
-          coverage_percent = os.environ.get('COVERAGE_PERCENT', '0')
-          commit_sha = os.environ.get('COMMIT_SHA', 'unknown')
-          commit_date = os.environ.get('COMMIT_DATE', 'unknown')
-          coverage_status = os.environ.get('COVERAGE_STATUS', '❌ Needs Improvement')
+          commit_count = os.environ.get("COMMIT_COUNT", "0")
+          coverage_percent = os.environ.get("COVERAGE_PERCENT", "0")
+          commit_sha = os.environ.get("COMMIT_SHA", "unknown")
+          commit_date = os.environ.get("COMMIT_DATE", "unknown")
+          coverage_status = os.environ.get("COVERAGE_STATUS", "❌ Needs Improvement")
 
-          with open('README.md', 'r', encoding='utf-8') as f:
+          with open("README.md", "r", encoding="utf-8") as f:
               content = f.read()
 
-          # -----------------------------
+          # =============================
           # Resume Details Section
-          # -----------------------------
-          tech_stack = [
-              "Flutter (Stable)",
-              "Clean Architecture",
-              "MVVM Architecture",
-              "Unit Testing",
-              "Provider State Management",
-              "GitHub Actions CI/CD",
-              "Code Coverage Reporting"
-          ]
+          # =============================
+          resume_sections = {
+              "👨‍💻 Professional Summary": [
+                  "Senior Android Developer",
+                  "8+ Years Mobile Application Development",
+                  "Cross-Platform (Flutter & React Native)"
+              ],
+              "🏗 Architecture": [
+                  "Clean Architecture",
+                  "MVVM Pattern",
+                  "Modular Architecture",
+                  "Jetpack Compose",
+                  "Android XML UI"
+              ],
+              "📱 Mobile Stack": [
+                  "Kotlin",
+                  "Java",
+                  "Android SDK",
+                  "Jetpack Components",
+                  "Flutter",
+                  "React Native"
+              ],
+              "🔗 Backend & APIs": [
+                  "REST API Integration",
+                  "Node.js",
+                  "Express.js",
+                  "MySQL",
+                  "Sequelize"
+              ],
+              "🧪 Testing & Quality": [
+                  "Unit Testing",
+                  "Instrumented Testing",
+                  "Performance Optimization",
+                  "Reliability Engineering"
+              ],
+              "🚀 DevOps & CI/CD": [
+                  "GitHub Actions",
+                  "Automated Builds",
+                  "CI/CD Pipelines",
+                  "Coverage Reporting (lcov)"
+              ],
+              "🎓 Education": [
+                  "Diploma in Mobile Computing (2017)",
+                  "Electronics & Communications (2012–2016)"
+              ],
+              "🌍 Languages": [
+                  "English – Professional",
+                  "Hindi – Fluent"
+              ]
+          }
 
-          # Auto detect OneSignal
-          pubspec_content = ""
+          # Detect OneSignal automatically
           if os.path.exists("pubspec.yaml"):
               with open("pubspec.yaml", "r", encoding="utf-8") as f:
-                  pubspec_content = f.read().lower()
+                  if "onesignal" in f.read().lower():
+                      resume_sections.setdefault("🔔 Integrations", []).append("OneSignal Notification")
 
-          if "onesignal" in pubspec_content:
-              tech_stack.append("OneSignal Notification Integration")
+          resume_lines = ["## 🧾 Resume Details", ""]
 
-          resume_lines = [
-              "## 🧾 Resume Details",
-              "",
-              "### 🚀 Core Skills & Technologies",
-              ""
-          ]
+          for section, items in resume_sections.items():
+              resume_lines.append(f"### {section}")
+              resume_lines.append("")
+              for item in items:
+                  resume_lines.append(f"- {item}")
+              resume_lines.append("")
 
-          for tech in tech_stack:
-              resume_lines.append(f"- {tech}")
-
-          resume_lines.append("")
           resume_lines.append("---")
           resume_lines.append("")
-
           resume_section = "\n".join(resume_lines)
 
-          # Replace or Insert Resume Section
-          if re.search(r'## 🧾 Resume Details', content):
-              pattern = r'## 🧾 Resume Details.*?^---\s*\n'
+          # Replace or insert Resume Section
+          if re.search(r"## 🧾 Resume Details", content):
+              pattern = r"## 🧾 Resume Details.*?^---\s*\n"
               content = re.sub(pattern, resume_section, content, flags=re.DOTALL | re.MULTILINE)
           else:
-              first_title = re.search(r'(^# .*?\n)', content, re.MULTILINE)
-              if first_title:
-                  content = content[:first_title.end(1)] + "\n" + resume_section + content[first_title.end(1):]
+              title_match = re.search(r"(^# .*?\n)", content, re.MULTILINE)
+              if title_match:
+                  content = content[:title_match.end(1)] + "\n" + resume_section + content[title_match.end(1):]
               else:
                   content = resume_section + content
 
-          # -----------------------------
+          # =============================
           # Project Statistics Section
-          # -----------------------------
+          # =============================
           stats_lines = [
               "## 📊 Project Statistics",
               "",
@@ -152,24 +182,22 @@ jobs:
               f"| **Last Updated** | {commit_date} | 🔄 Auto-updated |",
               f"| **Latest Commit** | `{commit_sha}` | 📝 |",
               "",
-              "> **Note:** These statistics are automatically updated via GitHub Actions.",
-              "",
               "---",
               ""
           ]
 
           stats_section = "\n".join(stats_lines)
 
-          if re.search(r'## 📊 Project Statistics', content):
-              pattern = r'## 📊 Project Statistics.*?^---\s*\n'
+          if re.search(r"## 📊 Project Statistics", content):
+              pattern = r"## 📊 Project Statistics.*?^---\s*\n"
               content = re.sub(pattern, stats_section, content, flags=re.DOTALL | re.MULTILINE)
           else:
               content += "\n" + stats_section
 
-          with open('README.md', 'w', encoding='utf-8') as f:
+          with open("README.md", "w", encoding="utf-8") as f:
               f.write(content)
 
-          print("README.md updated successfully")
+          print("README updated successfully")
           PYEOF
 
       - name: Commit changes
