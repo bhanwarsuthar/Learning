@@ -3,6 +3,10 @@ name: Update README with Stats
 on:
   push:
     branches: [ main, master ]
+    paths:
+      - 'README.md'
+      - 'resume/resume_details.md'
+      - '.github/workflows/update_readme.yml'
   workflow_dispatch:
 
 jobs:
@@ -91,9 +95,11 @@ jobs:
         commit_date = os.environ.get('COMMIT_DATE', 'unknown')
         coverage_status = os.environ.get('COVERAGE_STATUS', '❌ Needs Improvement')
         
-        # Read README
+        # Read README and resume source
         with open('README.md', 'r', encoding='utf-8') as f:
             content = f.read()
+        with open('resume/resume_details.md', 'r', encoding='utf-8') as f:
+            resume_details = f.read().strip()
         
         # Create stats section - using list join to avoid YAML issues with pipes
         stats_lines = [
@@ -140,6 +146,25 @@ jobs:
                 first_heading = re.search(r'(^## .*?\n)', content, re.MULTILINE)
                 if first_heading:
                     content = content[:first_heading.end(1)] + stats_section + content[first_heading.end(1):]
+
+        # Build resume section from static details source
+        resume_section = "\n".join([
+            "<!-- RESUME_SECTION_START -->",
+            "## 📄 Resume",
+            "",
+            resume_details,
+            "",
+            "> **Note:** This resume section is automatically updated from `resume/resume_details.md`.",
+            "<!-- RESUME_SECTION_END -->",
+            ""
+        ])
+
+        # Replace existing resume section or append it
+        if re.search(r'<!-- RESUME_SECTION_START -->', content):
+            pattern = r'<!-- RESUME_SECTION_START -->.*?<!-- RESUME_SECTION_END -->\s*\n?'
+            content = re.sub(pattern, resume_section, content, flags=re.DOTALL | re.MULTILINE)
+        else:
+            content = content.rstrip() + "\n\n---\n\n" + resume_section
         
         # Write updated README
         with open('README.md', 'w', encoding='utf-8') as f:
@@ -156,7 +181,7 @@ jobs:
         git config --local user.name "GitHub Action"
         git add README.md
         if ! git diff --staged --quiet; then
-          git commit -m "📊 Auto-update: Commit count (${{ steps.commit_count.outputs.count }}) and coverage (${{ steps.coverage.outputs.percentage }}%) [skip ci]"
+          git commit -m "📊 Auto-update: stats and resume section [skip ci]"
           git push origin HEAD:${{ github.ref }}
         else
           echo "No changes to commit"
