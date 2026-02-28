@@ -8,156 +8,178 @@ on:
 jobs:
   update-readme:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: write
       pull-requests: write
-    
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        channel: 'stable'
-    
-    - name: Install dependencies
-      run: flutter pub get
-    
-    - name: Install lcov and bc
-      run: sudo apt-get update && sudo apt-get install -y lcov
-    
-    - name: Run tests with coverage
-      run: flutter test --coverage
 
-    - name: Generate HTML coverage report
-      run: genhtml coverage/lcov.info -o coverage/html
-    
-    - name: Get commit count
-      id: commit_count
-      run: |
-        COMMIT_COUNT=$(git rev-list --count HEAD)
-        echo "count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
-        echo "Total commits: $COMMIT_COUNT"
-    
-    - name: Get coverage percentage
-      id: coverage
-      run: |
-        if [ -f coverage/lcov_cleaned.info ]; then
-          COVERAGE=$(lcov --summary coverage/lcov_cleaned.info 2>/dev/null | grep -m 1 "lines.*:" | sed -e 's/.*lines.*: \([0-9.]*\)%.*/\1/' || echo "0")
-        else
-          COVERAGE=$(lcov --summary coverage/lcov.info 2>/dev/null | grep -m 1 "lines.*:" | sed -e 's/.*lines.*: \([0-9.]*\)%.*/\1/' || echo "0")
-        fi
-        echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
-        echo "Coverage: $COVERAGE%"
-    
-    - name: Get latest commit info
-      id: commit_info
-      run: |
-        COMMIT_SHA=$(git rev-parse --short HEAD)
-        COMMIT_DATE=$(git log -1 --pretty=%cd --date=format:'%Y-%m-%d %H:%M:%S UTC')
-        echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
-        echo "date=$COMMIT_DATE" >> $GITHUB_OUTPUT
-    
-    - name: Update README.md
-      env:
-        COMMIT_COUNT: ${{ steps.commit_count.outputs.count }}
-        COVERAGE_PERCENT: ${{ steps.coverage.outputs.percentage }}
-        COMMIT_SHA: ${{ steps.commit_info.outputs.sha }}
-        COMMIT_DATE: ${{ steps.commit_info.outputs.date }}
-      run: |
-        # Determine coverage status
-        if (( $(echo "$COVERAGE_PERCENT >= 80" | bc -l) )); then
-            COVERAGE_STATUS="✅ Excellent"
-        elif (( $(echo "$COVERAGE_PERCENT >= 60" | bc -l) )); then
-            COVERAGE_STATUS="⚠️ Good"
-        else
-            COVERAGE_STATUS="❌ Needs Improvement"
-        fi
-        export COVERAGE_STATUS
-        
-        # Create Python script to update README
-        python3 << 'PYEOF'
-        import re
-        import os
-        
-        # Get environment variables
-        commit_count = os.environ.get('COMMIT_COUNT', '0')
-        coverage_percent = os.environ.get('COVERAGE_PERCENT', '0')
-        commit_sha = os.environ.get('COMMIT_SHA', 'unknown')
-        commit_date = os.environ.get('COMMIT_DATE', 'unknown')
-        coverage_status = os.environ.get('COVERAGE_STATUS', '❌ Needs Improvement')
-        
-        # Read README
-        with open('README.md', 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # Create stats section - using list join to avoid YAML issues with pipes
-        stats_lines = [
-            "## 📊 Project Statistics",
-            "",
-            "| Metric | Value | Status |",
-            "|--------|-------|--------|",
-            f"| **Total Commits** | {commit_count} | ✅ Active |",
-            f"| **Code Coverage** | {coverage_percent}% | {coverage_status} |",
-            f"| **Last Updated** | {commit_date} | 🔄 Auto-updated |",
-            f"| **Latest Commit** | `{commit_sha}` | 📝 |",
-            "",
-            "> **Note:** These statistics are automatically updated on every commit via GitHub Actions. View live dashboard at: [GitHub Pages](https://bhanwarsuthar.github.io/Learning/)",
-            "",
-            "---",
-            ""
-        ]
-        stats_section = "\n".join(stats_lines)
-        
-        # Check if stats section exists
-        if re.search(r'## 📊 Project Statistics', content):
-            # Replace existing stats section (from ## 📊 to ---)
-            pattern = r'## 📊 Project Statistics.*?^---\s*\n'
-            content = re.sub(pattern, stats_section, content, flags=re.DOTALL | re.MULTILINE)
-        else:
-            # Insert after table of contents
-            if '## 📋 Table of Contents' in content:
-                # Find the end of table of contents section
-                toc_match = re.search(r'(## 📋 Table of Contents.*?\n)(## )', content, re.DOTALL)
-                if toc_match:
-                    content = content[:toc_match.end(1)] + stats_section + content[toc_match.start(2):]
-                else:
-                    # Insert after table of contents, before next section
-                    toc_match = re.search(r'(## 📋 Table of Contents.*?\n)(?=## |$)', content, re.DOTALL)
-                    if toc_match:
-                        content = content[:toc_match.end(1)] + stats_section + content[toc_match.end(1):]
-                    else:
-                        # Fallback: insert after first heading
-                        first_heading = re.search(r'(^## .*?\n)', content, re.MULTILINE)
-                        if first_heading:
-                            content = content[:first_heading.end(1)] + stats_section + content[first_heading.end(1):]
-            else:
-                # Insert after first heading
-                first_heading = re.search(r'(^## .*?\n)', content, re.MULTILINE)
-                if first_heading:
-                    content = content[:first_heading.end(1)] + stats_section + content[first_heading.end(1):]
-        
-        # Write updated README
-        with open('README.md', 'w', encoding='utf-8') as f:
-            f.write(content)
-        
-        print("README.md updated successfully")
-        print(f"Commit count: {commit_count}")
-        print(f"Coverage: {coverage_percent}%")
-        PYEOF
-    
-    - name: Commit changes
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add README.md
-        if ! git diff --staged --quiet; then
-          git commit -m "📊 Auto-update: Commit count (${{ steps.commit_count.outputs.count }}) and coverage (${{ steps.coverage.outputs.percentage }}%) [skip ci]"
-          git push origin HEAD:${{ github.ref }}
-        else
-          echo "No changes to commit"
-        fi
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Install lcov and bc
+        run: sudo apt-get update && sudo apt-get install -y lcov bc
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Generate HTML coverage report
+        run: genhtml coverage/lcov.info -o coverage/html
+
+      - name: Get commit count
+        id: commit_count
+        run: |
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          echo "count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
+
+      - name: Get coverage percentage
+        id: coverage
+        run: |
+          if [ -f coverage/lcov_cleaned.info ]; then
+            COVERAGE=$(lcov --summary coverage/lcov_cleaned.info 2>/dev/null | grep -m 1 "lines.*:" | sed -e 's/.*lines.*: \([0-9.]*\)%.*/\1/' || echo "0")
+          else
+            COVERAGE=$(lcov --summary coverage/lcov.info 2>/dev/null | grep -m 1 "lines.*:" | sed -e 's/.*lines.*: \([0-9.]*\)%.*/\1/' || echo "0")
+          fi
+          echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+
+      - name: Get latest commit info
+        id: commit_info
+        run: |
+          COMMIT_SHA=$(git rev-parse --short HEAD)
+          COMMIT_DATE=$(git log -1 --pretty=%cd --date=format:'%Y-%m-%d %H:%M:%S UTC')
+          echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "date=$COMMIT_DATE" >> $GITHUB_OUTPUT
+
+      - name: Update README.md
+        env:
+          COMMIT_COUNT: ${{ steps.commit_count.outputs.count }}
+          COVERAGE_PERCENT: ${{ steps.coverage.outputs.percentage }}
+          COMMIT_SHA: ${{ steps.commit_info.outputs.sha }}
+          COMMIT_DATE: ${{ steps.commit_info.outputs.date }}
+        run: |
+          # Determine coverage status
+          if (( $(echo "$COVERAGE_PERCENT >= 80" | bc -l) )); then
+              COVERAGE_STATUS="✅ Excellent"
+          elif (( $(echo "$COVERAGE_PERCENT >= 60" | bc -l) )); then
+              COVERAGE_STATUS="⚠️ Good"
+          else
+              COVERAGE_STATUS="❌ Needs Improvement"
+          fi
+          export COVERAGE_STATUS
+
+          python3 << 'PYEOF'
+          import re
+          import os
+
+          commit_count = os.environ.get('COMMIT_COUNT', '0')
+          coverage_percent = os.environ.get('COVERAGE_PERCENT', '0')
+          commit_sha = os.environ.get('COMMIT_SHA', 'unknown')
+          commit_date = os.environ.get('COMMIT_DATE', 'unknown')
+          coverage_status = os.environ.get('COVERAGE_STATUS', '❌ Needs Improvement')
+
+          with open('README.md', 'r', encoding='utf-8') as f:
+              content = f.read()
+
+          # -----------------------------
+          # Resume Details Section
+          # -----------------------------
+          tech_stack = [
+              "Flutter (Stable)",
+              "Clean Architecture",
+              "MVVM Architecture",
+              "Unit Testing",
+              "Provider State Management",
+              "GitHub Actions CI/CD",
+              "Code Coverage Reporting"
+          ]
+
+          # Auto detect OneSignal
+          pubspec_content = ""
+          if os.path.exists("pubspec.yaml"):
+              with open("pubspec.yaml", "r", encoding="utf-8") as f:
+                  pubspec_content = f.read().lower()
+
+          if "onesignal" in pubspec_content:
+              tech_stack.append("OneSignal Notification Integration")
+
+          resume_lines = [
+              "## 🧾 Resume Details",
+              "",
+              "### 🚀 Core Skills & Technologies",
+              ""
+          ]
+
+          for tech in tech_stack:
+              resume_lines.append(f"- {tech}")
+
+          resume_lines.append("")
+          resume_lines.append("---")
+          resume_lines.append("")
+
+          resume_section = "\n".join(resume_lines)
+
+          # Replace or Insert Resume Section
+          if re.search(r'## 🧾 Resume Details', content):
+              pattern = r'## 🧾 Resume Details.*?^---\s*\n'
+              content = re.sub(pattern, resume_section, content, flags=re.DOTALL | re.MULTILINE)
+          else:
+              first_title = re.search(r'(^# .*?\n)', content, re.MULTILINE)
+              if first_title:
+                  content = content[:first_title.end(1)] + "\n" + resume_section + content[first_title.end(1):]
+              else:
+                  content = resume_section + content
+
+          # -----------------------------
+          # Project Statistics Section
+          # -----------------------------
+          stats_lines = [
+              "## 📊 Project Statistics",
+              "",
+              "| Metric | Value | Status |",
+              "|--------|-------|--------|",
+              f"| **Total Commits** | {commit_count} | ✅ Active |",
+              f"| **Code Coverage** | {coverage_percent}% | {coverage_status} |",
+              f"| **Last Updated** | {commit_date} | 🔄 Auto-updated |",
+              f"| **Latest Commit** | `{commit_sha}` | 📝 |",
+              "",
+              "> **Note:** These statistics are automatically updated via GitHub Actions.",
+              "",
+              "---",
+              ""
+          ]
+
+          stats_section = "\n".join(stats_lines)
+
+          if re.search(r'## 📊 Project Statistics', content):
+              pattern = r'## 📊 Project Statistics.*?^---\s*\n'
+              content = re.sub(pattern, stats_section, content, flags=re.DOTALL | re.MULTILINE)
+          else:
+              content += "\n" + stats_section
+
+          with open('README.md', 'w', encoding='utf-8') as f:
+              f.write(content)
+
+          print("README.md updated successfully")
+          PYEOF
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          if ! git diff --staged --quiet; then
+            git commit -m "📊 Auto-update README (Commits: ${{ steps.commit_count.outputs.count }}, Coverage: ${{ steps.coverage.outputs.percentage }}%) [skip ci]"
+            git push origin HEAD:${{ github.ref }}
+          else
+            echo "No changes to commit"
+          fi
