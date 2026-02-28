@@ -1,4 +1,4 @@
-name: Update README with Stats
+name: CI - Stats and Resume Publish
 
 on:
   push:
@@ -30,10 +30,10 @@ jobs:
       run: flutter pub get
     
     - name: Install lcov and bc
-      run: sudo apt-get update && sudo apt-get install -y lcov
+      run: sudo apt-get update && sudo apt-get install -y lcov bc
 
-    - name: Install pandoc
-      run: sudo apt-get install -y pandoc
+    - name: Install poppler-utils
+      run: sudo apt-get install -y poppler-utils
     
     - name: Run tests with coverage
       run: flutter test --coverage
@@ -41,39 +41,41 @@ jobs:
     - name: Generate HTML coverage report
       run: genhtml coverage/lcov.info -o coverage/html
 
-    - name: Build full resume (HTML only)
+    - name: Build full resume page from PDF
       run: |
         mkdir -p docs
-        cp resume/resume.css docs/resume.css
+        pdftoppm -png -singlefile resume/Bhanwar_Suthar_Resume.pdf docs/resume
 
-        pandoc resume/resume.md \
-          --standalone \
-          --css resume.css \
-          -o docs/index.html
+        cat > docs/index.html << 'EOF'
+        <!doctype html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Bhanwar Suthar - Resume</title>
+          <style>
+            body { margin: 0; background: #f3f4f6; display: flex; justify-content: center; }
+            img { width: min(100%, 950px); height: auto; display: block; }
+          </style>
+        </head>
+        <body>
+          <img src="./resume.png" alt="Bhanwar Suthar full resume" />
+        </body>
+        </html>
+        EOF
 
-        pandoc resume/resume.md \
-          --standalone \
-          --css resume.css \
-          -o resume/index.html
-    
     - name: Get commit count
       id: commit_count
       run: |
         COMMIT_COUNT=$(git rev-list --count HEAD)
         echo "count=$COMMIT_COUNT" >> $GITHUB_OUTPUT
-        echo "Total commits: $COMMIT_COUNT"
-    
+
     - name: Get coverage percentage
       id: coverage
       run: |
-        if [ -f coverage/lcov_cleaned.info ]; then
-          COVERAGE=$(lcov --summary coverage/lcov_cleaned.info 2>/dev/null | grep -m 1 "lines.*:" | sed -e 's/.*lines.*: \([0-9.]*\)%.*/\1/' || echo "0")
-        else
-          COVERAGE=$(lcov --summary coverage/lcov.info 2>/dev/null | grep -m 1 "lines.*:" | sed -e 's/.*lines.*: \([0-9.]*\)%.*/\1/' || echo "0")
-        fi
+        COVERAGE=$(lcov --summary coverage/lcov.info 2>/dev/null | grep -m 1 "lines.*:" | sed -e 's/.*lines.*: \([0-9.]*\)%.*/\1/' || echo "0")
         echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
-        echo "Coverage: $COVERAGE%"
-    
+
     - name: Get latest commit info
       id: commit_info
       run: |
@@ -81,15 +83,14 @@ jobs:
         COMMIT_DATE=$(git log -1 --pretty=%cd --date=format:'%Y-%m-%d %H:%M:%S UTC')
         echo "sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
         echo "date=$COMMIT_DATE" >> $GITHUB_OUTPUT
-    
-    - name: Update README.md
+
+    - name: Update README stats section
       env:
         COMMIT_COUNT: ${{ steps.commit_count.outputs.count }}
         COVERAGE_PERCENT: ${{ steps.coverage.outputs.percentage }}
         COMMIT_SHA: ${{ steps.commit_info.outputs.sha }}
         COMMIT_DATE: ${{ steps.commit_info.outputs.date }}
       run: |
-        # Determine coverage status
         if (( $(echo "$COVERAGE_PERCENT >= 80" | bc -l) )); then
             COVERAGE_STATUS="✅ Excellent"
         elif (( $(echo "$COVERAGE_PERCENT >= 60" | bc -l) )); then
@@ -98,24 +99,19 @@ jobs:
             COVERAGE_STATUS="❌ Needs Improvement"
         fi
         export COVERAGE_STATUS
-        
-        # Create Python script to update README
         python3 << 'PYEOF'
         import re
         import os
-        
-        # Get environment variables
+
         commit_count = os.environ.get('COMMIT_COUNT', '0')
         coverage_percent = os.environ.get('COVERAGE_PERCENT', '0')
         commit_sha = os.environ.get('COMMIT_SHA', 'unknown')
         commit_date = os.environ.get('COMMIT_DATE', 'unknown')
         coverage_status = os.environ.get('COVERAGE_STATUS', '❌ Needs Improvement')
-        
-        # Read README
+
         with open('README.md', 'r', encoding='utf-8') as f:
             content = f.read()
-        
-        # Create stats section - using list join to avoid YAML issues with pipes
+
         stats_lines = [
             "## 📊 Project Statistics",
             "",
@@ -132,52 +128,49 @@ jobs:
             ""
         ]
         stats_section = "\n".join(stats_lines)
-        
-        # Check if stats section exists
+
         if re.search(r'## 📊 Project Statistics', content):
-            # Replace existing stats section (from ## 📊 to ---)
             pattern = r'## 📊 Project Statistics.*?^---\s*\n'
             content = re.sub(pattern, stats_section, content, flags=re.DOTALL | re.MULTILINE)
         else:
-            # Insert after table of contents
-            if '## 📋 Table of Contents' in content:
-                # Find the end of table of contents section
-                toc_match = re.search(r'(## 📋 Table of Contents.*?\n)(## )', content, re.DOTALL)
-                if toc_match:
-                    content = content[:toc_match.end(1)] + stats_section + content[toc_match.start(2):]
-                else:
-                    # Insert after table of contents, before next section
-                    toc_match = re.search(r'(## 📋 Table of Contents.*?\n)(?=## |$)', content, re.DOTALL)
-                    if toc_match:
-                        content = content[:toc_match.end(1)] + stats_section + content[toc_match.end(1):]
-                    else:
-                        # Fallback: insert after first heading
-                        first_heading = re.search(r'(^## .*?\n)', content, re.MULTILINE)
-                        if first_heading:
-                            content = content[:first_heading.end(1)] + stats_section + content[first_heading.end(1):]
+            heading = re.search(r'(^# .*?\n\n)', content, re.MULTILINE)
+            if heading:
+                content = content[:heading.end(1)] + stats_section + content[heading.end(1):]
             else:
-                # Insert after first heading
-                first_heading = re.search(r'(^## .*?\n)', content, re.MULTILINE)
-                if first_heading:
-                    content = content[:first_heading.end(1)] + stats_section + content[first_heading.end(1):]
-        
-        # Write updated README
+                content = stats_section + content
+
         with open('README.md', 'w', encoding='utf-8') as f:
             f.write(content)
-        
-        print("README.md updated successfully")
-        print(f"Commit count: {commit_count}")
-        print(f"Coverage: {coverage_percent}%")
         PYEOF
+
+        cp docs/index.html resume/index.html
+        
+        cat > index.html << 'EOF'
+        <!doctype html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Bhanwar Suthar - Resume</title>
+          <style>
+            body { margin: 0; background: #f3f4f6; display: flex; justify-content: center; }
+            img { width: min(100%, 950px); height: auto; display: block; }
+          </style>
+        </head>
+        <body>
+          <img src="./docs/resume.png" alt="Bhanwar Suthar full resume" />
+        </body>
+        </html>
+        EOF
     
     - name: Commit changes
       if: github.event_name == 'push'
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add README.md docs/index.html docs/resume.css resume/index.html
+        git add README.md index.html docs/index.html docs/resume.png resume/index.html resume/Bhanwar_Suthar_Resume.pdf
         if ! git diff --staged --quiet; then
-          git commit -m "📊 Auto-update: stats, coverage, and resume [skip ci]"
+          git commit -m "📊 Auto-update: stats and resume artifacts [skip ci]"
           git push origin HEAD:${{ github.ref }}
         else
           echo "No changes to commit"
