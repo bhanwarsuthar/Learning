@@ -2,6 +2,17 @@
 
 A Flutter project implementing MVVM (Model-View-ViewModel) architecture using Provider for state management and HTTP for API communication.
 
+## 📄 Resume Showcase
+
+- Resume source (editable): `resume/resume.md`
+- Generated web version: `resume/index.html`
+- Generated PDF version: `resume/Bhanwar_Suthar_Resume.pdf`
+- GitHub Actions workflow: `.github/workflows/resume_cicd.yml`
+
+The resume files are automatically built in CI:
+- On every PR to `main`/`master`: builds and uploads preview artifacts.
+- On every push/merge to `main`/`master`: rebuilds and auto-commits updated `HTML` and `PDF` resume files.
+
 ## 📊 Project Statistics
 
 | Metric | Value | Status |
