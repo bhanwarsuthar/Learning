@@ -32,8 +32,8 @@ jobs:
     - name: Install lcov and bc
       run: sudo apt-get update && sudo apt-get install -y lcov
 
-    - name: Install pandoc and wkhtmltopdf
-      run: sudo apt-get install -y pandoc wkhtmltopdf
+    - name: Install pandoc
+      run: sudo apt-get install -y pandoc
     
     - name: Run tests with coverage
       run: flutter test --coverage
@@ -41,7 +41,7 @@ jobs:
     - name: Generate HTML coverage report
       run: genhtml coverage/lcov.info -o coverage/html
 
-    - name: Build resume (HTML + PDF)
+    - name: Build full resume (HTML only)
       run: |
         mkdir -p docs
         cp resume/resume.css docs/resume.css
@@ -55,12 +55,6 @@ jobs:
           --standalone \
           --css resume.css \
           -o resume/index.html
-
-        pandoc resume/resume.md \
-          --standalone \
-          --css resume.css \
-          --pdf-engine=wkhtmltopdf \
-          -o resume/Bhanwar_Suthar_Resume.pdf
     
     - name: Get commit count
       id: commit_count
@@ -181,7 +175,7 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add README.md docs/index.html docs/resume.css resume/index.html resume/Bhanwar_Suthar_Resume.pdf
+        git add README.md docs/index.html docs/resume.css resume/index.html
         if ! git diff --staged --quiet; then
           git commit -m "📊 Auto-update: stats, coverage, and resume [skip ci]"
           git push origin HEAD:${{ github.ref }}
